@@ -1,98 +1,468 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# MyRizq Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A modern, scalable backend API built with NestJS, GraphQL, and PostgreSQL. This server provides a robust foundation for the MyRizq application with type-safe database operations using Prisma ORM.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Tech Stack
 
-## Description
+- **Framework**: [NestJS](https://nestjs.com/) - A progressive Node.js framework
+- **API**: [GraphQL](https://graphql.org/) with Apollo Server
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **ORM**: [Prisma](https://www.prisma.io/) - Next-generation TypeScript ORM
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Package Manager**: [pnpm](https://pnpm.io/)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Prerequisites
 
-## Project setup
+Before you begin, ensure you have the following installed on your system:
+
+- **Node.js** (v18.x or higher) - [Download](https://nodejs.org/)
+- **pnpm** (v8.x or higher) - Install via: `npm install -g pnpm`
+- **PostgreSQL** (v14.x or higher) - [Download](https://www.postgresql.org/download/)
+- **Git** - [Download](https://git-scm.com/)
+
+### Verify Installation
 
 ```bash
-$ pnpm install
+node --version    # Should be v18.x or higher
+pnpm --version    # Should be v8.x or higher
+psql --version    # Should be v14.x or higher
 ```
 
-## Compile and run the project
+## 🛠️ Installation & Setup
+
+### 1. Clone the Repository
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+git clone <your-repository-url>
+cd my-rizq-server
 ```
 
-## Run tests
+### 2. Install Dependencies
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm install
 ```
 
-## Deployment
+### 3. Database Setup
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+#### Option A: Using Local PostgreSQL
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. **Start PostgreSQL Service**
+   - **Windows**: PostgreSQL should start automatically, or use Services app
+   - **macOS**: `brew services start postgresql`
+   - **Linux**: `sudo systemctl start postgresql`
+
+2. **Create Database**
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# Access PostgreSQL
+psql -U postgres
+
+# Create database
+CREATE DATABASE myrizq_db;
+
+# Create user (optional)
+CREATE USER myrizq_user WITH PASSWORD 'your_secure_password';
+
+# Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE myrizq_db TO myrizq_user;
+
+# Exit
+\q
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+#### Option B: Using Docker (Recommended)
 
-## Resources
+```bash
+# Run PostgreSQL in Docker
+docker run --name myrizq-postgres \
+  -e POSTGRES_DB=myrizq_db \
+  -e POSTGRES_USER=myrizq_user \
+  -e POSTGRES_PASSWORD=your_secure_password \
+  -p 5432:5432 \
+  -d postgres:16-alpine
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 4. Environment Configuration
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Create a `.env` file in the root directory:
 
-## Support
+```bash
+# Copy from example (if exists) or create new
+touch .env
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Add the following environment variables to `.env`:
 
-## Stay in touch
+```env
+# Database Configuration
+DATABASE_URL="postgresql://myrizq_user:your_secure_password@localhost:5432/myrizq_db?schema=public"
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Server Configuration
+PORT=3000
+NODE_ENV=development
 
-## License
+# API Configuration
+GRAPHQL_PLAYGROUND=true
+GRAPHQL_DEBUG=true
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Add other environment variables as needed
+# JWT_SECRET=your_jwt_secret_here
+# JWT_EXPIRES_IN=7d
+```
+
+**Important**: Never commit `.env` file to version control!
+
+### 5. Prisma Setup
+
+```bash
+# Generate Prisma Client
+pnpm prisma generate
+
+# Run database migrations
+pnpm prisma migrate dev --name init
+
+# (Optional) Seed the database
+pnpm prisma db seed
+```
+
+### 6. Verify Setup
+
+```bash
+# Check database connection
+pnpm prisma studio
+```
+
+This will open Prisma Studio at `http://localhost:5555` where you can view and manage your database.
+
+## 🏃 Running the Application
+
+### Development Mode
+
+```bash
+# Start with hot-reload
+pnpm start:dev
+```
+
+The server will start at `http://localhost:3000`
+
+- **GraphQL Playground**: `http://localhost:3000/graphql`
+- **API Documentation**: `http://localhost:3000/api` (if Swagger is configured)
+
+### Production Mode
+
+```bash
+# Build the application
+pnpm build
+
+# Start production server
+pnpm start:prod
+```
+
+### Debug Mode
+
+```bash
+pnpm start:debug
+```
+
+## 🧪 Testing
+
+```bash
+# Run unit tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage
+pnpm test:cov
+
+# Run e2e tests
+pnpm test:e2e
+```
+
+## 📦 Available Scripts
+
+| Command            | Description                               |
+| ------------------ | ----------------------------------------- |
+| `pnpm start`       | Start the application                     |
+| `pnpm start:dev`   | Start in development mode with hot-reload |
+| `pnpm start:debug` | Start in debug mode                       |
+| `pnpm start:prod`  | Start in production mode                  |
+| `pnpm build`       | Build the application                     |
+| `pnpm format`      | Format code with Prettier                 |
+| `pnpm lint`        | Lint and fix code with ESLint             |
+| `pnpm test`        | Run unit tests                            |
+| `pnpm test:watch`  | Run tests in watch mode                   |
+| `pnpm test:cov`    | Run tests with coverage                   |
+| `pnpm test:e2e`    | Run end-to-end tests                      |
+
+## 🗄️ Database Management
+
+### Prisma Commands
+
+```bash
+# Generate Prisma Client (run after schema changes)
+pnpm prisma generate
+
+# Create a new migration
+pnpm prisma migrate dev --name <migration_name>
+
+# Apply migrations in production
+pnpm prisma migrate deploy
+
+# Reset database (WARNING: deletes all data)
+pnpm prisma migrate reset
+
+# Open Prisma Studio (GUI for database)
+pnpm prisma studio
+
+# Format schema file
+pnpm prisma format
+
+# Validate schema
+pnpm prisma validate
+```
+
+### Creating Migrations
+
+When you modify `prisma/schema.prisma`:
+
+```bash
+# Create and apply migration
+pnpm prisma migrate dev --name add_user_role
+
+# This will:
+# 1. Create a new migration file
+# 2. Apply it to your database
+# 3. Regenerate Prisma Client
+```
+
+## 🏗️ Project Structure
+
+```
+my-rizq-server/
+├── prisma/
+│   ├── migrations/         # Database migrations
+│   ├── schema.prisma       # Database schema
+│   └── seed.ts            # Database seeding script
+├── src/
+│   ├── common/            # Shared utilities and decorators
+│   ├── prisma/            # Prisma service and module
+│   ├── user/              # User module (example)
+│   ├── app.module.ts      # Root application module
+│   ├── app.controller.ts  # Root controller
+│   ├── app.service.ts     # Root service
+│   └── main.ts            # Application entry point
+├── test/                  # E2E tests
+├── .env                   # Environment variables (not in git)
+├── .env.example           # Environment variables template
+├── .gitignore            # Git ignore rules
+├── nest-cli.json         # NestJS CLI configuration
+├── package.json          # Dependencies and scripts
+├── pnpm-lock.yaml        # Lock file for pnpm
+├── tsconfig.json         # TypeScript configuration
+└── README.md             # This file
+```
+
+## 🔧 Configuration
+
+### TypeScript Configuration
+
+The project uses strict TypeScript settings. Configuration is in `tsconfig.json`.
+
+### ESLint & Prettier
+
+Code quality is maintained using:
+
+- **ESLint**: Linting and code quality rules
+- **Prettier**: Code formatting
+
+```bash
+# Format code
+pnpm format
+
+# Lint code
+pnpm lint
+```
+
+## 🌐 GraphQL API
+
+### Accessing GraphQL Playground
+
+When running in development mode, access the GraphQL Playground at:
+
+```
+http://localhost:3000/graphql
+```
+
+### Example Query
+
+```graphql
+query {
+  users {
+    id
+    email
+    name
+    posts {
+      id
+      title
+      content
+    }
+  }
+}
+```
+
+### Example Mutation
+
+```graphql
+mutation {
+  createUser(createUserInput: { email: "user@example.com", name: "John Doe" }) {
+    id
+    email
+    name
+  }
+}
+```
+
+## 🔐 Security Best Practices
+
+1. **Environment Variables**: Never commit `.env` files
+2. **Secrets**: Use strong, unique secrets for JWT and other sensitive data
+3. **Database**: Use strong passwords and restrict access
+4. **Dependencies**: Regularly update dependencies for security patches
+5. **CORS**: Configure CORS properly for production
+6. **Rate Limiting**: Implement rate limiting for API endpoints
+
+## 🚀 Deployment
+
+### Build for Production
+
+```bash
+# Install dependencies
+pnpm install --prod
+
+# Generate Prisma Client
+pnpm prisma generate
+
+# Run migrations
+pnpm prisma migrate deploy
+
+# Build application
+pnpm build
+
+# Start production server
+pnpm start:prod
+```
+
+### Environment Variables for Production
+
+Ensure these are set in your production environment:
+
+```env
+NODE_ENV=production
+DATABASE_URL=<production_database_url>
+PORT=3000
+GRAPHQL_PLAYGROUND=false
+GRAPHQL_DEBUG=false
+```
+
+### Deployment Platforms
+
+This application can be deployed to:
+
+- **Vercel** (with PostgreSQL from Vercel Postgres or external)
+- **Railway** (includes PostgreSQL)
+- **Render** (includes PostgreSQL)
+- **AWS** (EC2 + RDS)
+- **DigitalOcean** (App Platform + Managed Database)
+- **Heroku** (with Heroku Postgres)
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### 1. Database Connection Error
+
+```
+Error: Can't reach database server at `localhost:5432`
+```
+
+**Solution**:
+
+- Ensure PostgreSQL is running
+- Check DATABASE_URL in `.env`
+- Verify database credentials
+
+#### 2. Prisma Client Not Generated
+
+```
+Error: @prisma/client did not initialize yet
+```
+
+**Solution**:
+
+```bash
+pnpm prisma generate
+```
+
+#### 3. Port Already in Use
+
+```
+Error: listen EADDRINUSE: address already in use :::3000
+```
+
+**Solution**:
+
+- Change PORT in `.env`
+- Or kill the process using port 3000
+
+#### 4. Migration Errors
+
+```
+Error: Migration failed
+```
+
+**Solution**:
+
+```bash
+# Reset database (WARNING: deletes data)
+pnpm prisma migrate reset
+
+# Or fix migration manually
+pnpm prisma migrate resolve --rolled-back <migration_name>
+```
+
+## 📚 Additional Resources
+
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- [GraphQL Documentation](https://graphql.org/learn/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is [UNLICENSED](LICENSE).
+
+## 👥 Authors
+
+- Your Name - Initial work
+
+## 🙏 Acknowledgments
+
+- NestJS team for the amazing framework
+- Prisma team for the excellent ORM
+- The open-source community
+
+---
+
+**Need Help?** Open an issue or contact the development team.
