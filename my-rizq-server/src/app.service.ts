@@ -6,7 +6,9 @@ export class AppService {
   getHello() {
     return {
       success: true,
-      message: 'Server is running',
+      message: 'Welcome to MyRizq API',
+      api_documentation: 'http://localhost:8000/api',
+      api_graphql: 'http://localhost:8000/graphql',
       version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString(),

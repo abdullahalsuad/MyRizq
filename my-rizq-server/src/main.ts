@@ -3,10 +3,13 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import { GraphQLErrorFilter } from './common/filters/graphql-exception.filter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new GraphQLErrorFilter());
 
   const config = new DocumentBuilder()
     .setTitle('MyRizq API')
@@ -29,8 +32,5 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 8000);
 
   console.log(`✅ Server is running on http://localhost:${process.env.PORT}`);
-  console.log(
-    `📃 Swagger is running on http://localhost:${process.env.PORT}/api`,
-  );
 }
 bootstrap();
