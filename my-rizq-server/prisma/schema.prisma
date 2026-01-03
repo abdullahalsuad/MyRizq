@@ -202,6 +202,7 @@ model ExpenseSubcategory {
   expense_category_id Int
   name                String
   icon                String?
+  color               String? // hex color code
   is_active           Boolean  @default(true)
   created_at          DateTime @default(now())
 
@@ -223,7 +224,7 @@ model Expense {
   expense_date           DateTime
   merchant_name          String?
   location               String?
-  payment_method         String?
+  payment_method         String? // cash | card | bank | wallet
   notes                  String?
   is_recurring           Boolean  @default(false)
   created_at             DateTime @default(now())
@@ -307,6 +308,8 @@ model LoanTakenCategory {
   user_id    Int?
   name       String
   icon       String?
+  color      String?
+  isActive   Boolean  @default(true)
   created_at DateTime @default(now())
 
   user        User?       @relation(fields: [user_id], references: [id])
@@ -482,4 +485,57 @@ model RecurringTransaction {
   account Account @relation(fields: [account_id], references: [id])
 
   @@map("recurring_transactions")
+}
+
+// Enums
+enum AccountType {
+  bank
+  card
+  wallet
+  cash
+  budget
+  saving
+}
+
+enum CardType {
+  credit
+  debit
+  prepaid
+}
+
+enum CardNetwork {
+  visa
+  mastercard
+  amex
+  discover
+  unionpay
+}
+
+enum PaymentMethod {
+  cash
+  card
+  bank
+  wallet
+}
+
+enum PaymentFrequency {
+  daily
+  weekly
+  biweekly
+  monthly
+  quarterly
+  yearly
+}
+
+enum BudgetType {
+  monthly
+  yearly
+  custom
+}
+
+enum RecurringFrequency {
+  daily
+  weekly
+  monthly
+  yearly
 }
