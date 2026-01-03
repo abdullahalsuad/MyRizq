@@ -1,23 +1,485 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "library"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+// Users and Authentication
 model User {
-  id    String @id @default(cuid())
-  email String @unique
-  name  String
-  posts Post[]
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  image_url  String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  accounts               Account[]
+  transactions           Transaction[]
+  expenses               Expense[]
+  savings_goals          SavingsGoal[]
+  loans_taken            LoanTaken[]
+  loans_given            LoanGiven[]
+  budgets                Budget[]
+  activity_logs          ActivityLog[]
+  recurring_transactions RecurringTransaction[]
+  expense_categories     ExpenseCategory[]
+  saving_categories      SavingCategory[]
+  loan_taken_categories  LoanTakenCategory[]
+
+  @@index([email])
+  @@map("users")
 }
 
-model Post {
-  id       String @id @default(cuid())
-  title    String
-  content  String
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+// Core Accounts
+model Account {
+  id                Int      @id @default(autoincrement())
+  user_id           Int
+  account_type      String // bank | card | wallet | cash | budget | saving
+  name              String
+  balance           Decimal  @default(0)
+  currency          String   @default("USD")
+  is_active         Boolean  @default(true)
+  parent_account_id Int? // for linked accounts
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+
+  transactions           Transaction[]          @relation("AccountTransactions")
+  from_transactions      Transaction[]          @relation("FromAccount")
+  to_transactions        Transaction[]          @relation("ToAccount")
+  expenses               Expense[]
+  savings_goals_source   SavingsGoal[]          @relation("SourceAccount")
+  savings_goals_savings  SavingsGoal[]          @relation("SavingsAccount")
+  loans_taken            LoanTaken[]
+  loans_given            LoanGiven[]
+  recurring_transactions RecurringTransaction[]
+
+  // Self-referential relation for parent account
+  parent_account Account?  @relation("ParentAccount", fields: [parent_account_id], references: [id])
+  child_accounts Account[] @relation("ParentAccount")
+
+  bank_account   BankAccount?
+  card_account   CardAccount?
+  wallet_account WalletAccount?
+  cash_account   CashAccount?
+
+  @@index([user_id, account_type])
+  @@index([is_active])
+  @@map("accounts")
+}
+
+// Universal Transaction Table (Main Transaction Log)
+model Transaction {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  account_id       Int?
+  transaction_type String // income | expense | transfer | loan_given | loan_taken | loan_payment | saving | withdrawal
+  category         String? // expense | loan | saving | etc.
+  amount           Decimal
+  balance_after    Decimal? // account balance after transaction
+  reference_type   String? // expenses | loans_taken | loans_given | savings_goal | etc.
+  reference_id     Int?
+  from_account_id  Int?
+  to_account_id    Int?
+  transaction_date DateTime
+  description      String?
+  notes            String?
+  is_recurring     Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  user         User     @relation(fields: [user_id], references: [id])
+  account      Account? @relation("AccountTransactions", fields: [account_id], references: [id])
+  from_account Account? @relation("FromAccount", fields: [from_account_id], references: [id])
+  to_account   Account? @relation("ToAccount", fields: [to_account_id], references: [id])
+
+  expense        Expense?
+  loan_payment   LoanPayment?
+  loan_repayment LoanRepayment?
+
+  @@index([user_id, transaction_date])
+  @@index([account_id, transaction_date])
+  @@index([reference_type, reference_id])
+  @@index([transaction_type])
+  @@map("transactions")
+}
+
+// Bank Account Details
+model BankAccount {
+  id             Int      @id @default(autoincrement())
+  account_id     Int      @unique
+  bank_name      String
+  account_number String
+  branch_name    String?
+  routing_number String?
+  swift_code     String?
+  iban           String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now()) @updatedAt
+
+  account Account @relation(fields: [account_id], references: [id])
+
+  @@map("bank_accounts")
+}
+
+// Card Account Details
+model CardAccount {
+  id                Int       @id @default(autoincrement())
+  account_id        Int       @unique
+  card_name         String?
+  card_number_last4 String? // store only last 4 digits for security
+  card_type         String? // credit | debit | prepaid
+  card_network      String? // visa | mastercard | amex
+  cvv_hash          String? // hashed CVV for security
+  expiry_date       DateTime?
+  credit_limit      Decimal?
+  billing_cycle_day Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+
+  account Account @relation(fields: [account_id], references: [id])
+
+  @@map("card_accounts")
+}
+
+// Wallet Account Details
+model WalletAccount {
+  id                Int      @id @default(autoincrement())
+  account_id        Int      @unique
+  wallet_name       String?
+  wallet_provider   String? // paypal | venmo | cashapp | etc.
+  wallet_identifier String? // email, phone, or username
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now()) @updatedAt
+
+  account Account @relation(fields: [account_id], references: [id])
+
+  @@map("wallet_accounts")
+}
+
+// Cash Account Details
+model CashAccount {
+  id         Int      @id @default(autoincrement())
+  account_id Int      @unique
+  location   String? // wallet | safe | drawer | etc.
+  notes      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  account Account @relation(fields: [account_id], references: [id])
+
+  @@map("cash_accounts")
+}
+
+// Expense Categories
+model ExpenseCategory {
+  id         Int      @id @default(autoincrement())
+  user_id    Int? // null for system categories
+  name       String
+  icon       String?
+  color      String? // hex color code
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  user                  User?                @relation(fields: [user_id], references: [id])
+  expense_subcategories ExpenseSubcategory[]
+  expenses              Expense[]
+  budgets               Budget[]
+
+  @@map("expense_categories")
+}
+
+// Expense Subcategories
+model ExpenseSubcategory {
+  id                  Int      @id @default(autoincrement())
+  expense_category_id Int
+  name                String
+  icon                String?
+  is_active           Boolean  @default(true)
+  created_at          DateTime @default(now())
+
+  expense_category ExpenseCategory @relation(fields: [expense_category_id], references: [id])
+  expenses         Expense[]
+
+  @@map("expense_subcategories")
+}
+
+// Expenses
+model Expense {
+  id                     Int      @id @default(autoincrement())
+  user_id                Int
+  account_id             Int
+  transaction_id         Int?     @unique
+  expense_category_id    Int
+  expense_subcategory_id Int?
+  amount                 Decimal
+  expense_date           DateTime
+  merchant_name          String?
+  location               String?
+  payment_method         String?
+  notes                  String?
+  is_recurring           Boolean  @default(false)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @default(now()) @updatedAt
+
+  user                User                @relation(fields: [user_id], references: [id])
+  account             Account             @relation(fields: [account_id], references: [id])
+  transaction         Transaction?        @relation(fields: [transaction_id], references: [id])
+  expense_category    ExpenseCategory     @relation(fields: [expense_category_id], references: [id])
+  expense_subcategory ExpenseSubcategory? @relation(fields: [expense_subcategory_id], references: [id])
+
+  expense_attachments ExpenseAttachment[]
+
+  @@index([user_id, expense_date])
+  @@index([account_id, expense_date])
+  @@index([expense_category_id])
+  @@map("expenses")
+}
+
+// Expense Receipt/Slip Images
+model ExpenseAttachment {
+  id          Int      @id @default(autoincrement())
+  expense_id  Int
+  file_url    String
+  file_type   String? // image | pdf | etc.
+  file_size   Int?
+  uploaded_at DateTime @default(now())
+
+  expense Expense @relation(fields: [expense_id], references: [id])
+
+  @@map("expense_attachments")
+}
+
+// Saving Categories
+model SavingCategory {
+  id         Int      @id @default(autoincrement())
+  user_id    Int?
+  name       String
+  icon       String?
+  color      String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  user          User?         @relation(fields: [user_id], references: [id])
+  savings_goals SavingsGoal[]
+
+  @@map("saving_categories")
+}
+
+// Savings Goals
+model SavingsGoal {
+  id                 Int       @id @default(autoincrement())
+  user_id            Int
+  saving_category_id Int?
+  source_account_id  Int
+  savings_account_id Int?      @unique
+  goal_name          String
+  target_amount      Decimal
+  saved_amount       Decimal   @default(0)
+  start_date         DateTime
+  target_date        DateTime?
+  status             String    @default("active") // active | completed | cancelled
+  priority           Int       @default(0)
+  notes              String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @default(now()) @updatedAt
+
+  user            User            @relation(fields: [user_id], references: [id])
+  saving_category SavingCategory? @relation(fields: [saving_category_id], references: [id])
+  source_account  Account         @relation("SourceAccount", fields: [source_account_id], references: [id])
+  savings_account Account?        @relation("SavingsAccount", fields: [savings_account_id], references: [id])
+
+  @@index([user_id, status])
+  @@index([savings_account_id])
+  @@map("savings_goals")
+}
+
+// Loan Taken Categories
+model LoanTakenCategory {
+  id         Int      @id @default(autoincrement())
+  user_id    Int?
+  name       String
+  icon       String?
+  created_at DateTime @default(now())
+
+  user        User?       @relation(fields: [user_id], references: [id])
+  loans_taken LoanTaken[]
+
+  @@map("loan_taken_categories")
+}
+
+// Loans Taken (Borrowed)
+model LoanTaken {
+  id                     Int       @id @default(autoincrement())
+  user_id                Int
+  loan_taken_category_id Int?
+  account_id             Int
+  lender_name            String
+  loan_purpose           String?
+  loan_date              DateTime
+  principal_amount       Decimal
+  interest_rate          Decimal? // annual percentage rate
+  duration_months        Int?
+  payment_frequency      String? // monthly | weekly | biweekly
+  total_paid             Decimal   @default(0)
+  remaining_balance      Decimal
+  status                 String    @default("active") // active | paid | defaulted
+  due_date               DateTime?
+  notes                  String?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @default(now()) @updatedAt
+
+  user                User               @relation(fields: [user_id], references: [id])
+  loan_taken_category LoanTakenCategory? @relation(fields: [loan_taken_category_id], references: [id])
+  account             Account            @relation(fields: [account_id], references: [id])
+
+  loan_payments LoanPayment[]
+
+  @@index([user_id, status])
+  @@index([account_id, status])
+  @@map("loans_taken")
+}
+
+// Loan Payments (for loans taken)
+model LoanPayment {
+  id             Int      @id @default(autoincrement())
+  loan_taken_id  Int
+  transaction_id Int?     @unique
+  payment_amount Decimal
+  principal_paid Decimal?
+  interest_paid  Decimal?
+  payment_date   DateTime
+  payment_method String?
+  notes          String?
+  created_at     DateTime @default(now())
+
+  loan_taken  LoanTaken    @relation(fields: [loan_taken_id], references: [id])
+  transaction Transaction? @relation(fields: [transaction_id], references: [id])
+
+  @@map("loan_payments")
+}
+
+// Loans Given (Lent to Others)
+model LoanGiven {
+  id                Int       @id @default(autoincrement())
+  user_id           Int
+  account_id        Int
+  borrower_name     String
+  borrower_contact  String?
+  loan_amount       Decimal
+  interest_rate     Decimal   @default(0)
+  loan_date         DateTime
+  due_date          DateTime?
+  amount_received   Decimal   @default(0)
+  remaining_balance Decimal
+  status            String    @default("active") // active | paid | defaulted
+  loan_purpose      String?
+  notes             String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+
+  user    User    @relation(fields: [user_id], references: [id])
+  account Account @relation(fields: [account_id], references: [id])
+
+  loan_repayments LoanRepayment[]
+
+  @@index([user_id, status])
+  @@index([account_id, status])
+  @@map("loans_given")
+}
+
+// Loan Repayments (for loans given)
+model LoanRepayment {
+  id                 Int      @id @default(autoincrement())
+  loan_given_id      Int
+  transaction_id     Int?     @unique
+  repayment_amount   Decimal
+  principal_received Decimal?
+  interest_received  Decimal?
+  repayment_date     DateTime
+  payment_method     String?
+  notes              String?
+  created_at         DateTime @default(now())
+
+  loan_given  LoanGiven    @relation(fields: [loan_given_id], references: [id])
+  transaction Transaction? @relation(fields: [transaction_id], references: [id])
+
+  @@map("loan_repayments")
+}
+
+// Budgets
+model Budget {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  budget_name         String
+  budget_type         String? // monthly | yearly | custom
+  amount              Decimal
+  spent_amount        Decimal  @default(0)
+  start_date          DateTime
+  end_date            DateTime
+  expense_category_id Int?
+  status              String   @default("active")
+  alert_threshold     Decimal? // percentage to trigger alert
+  notes               String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @default(now()) @updatedAt
+
+  user             User             @relation(fields: [user_id], references: [id])
+  expense_category ExpenseCategory? @relation(fields: [expense_category_id], references: [id])
+
+  @@index([user_id, status])
+  @@index([start_date, end_date])
+  @@map("budgets")
+}
+
+// Comprehensive Activity Log (Audit Trail)
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  action      String // create | update | delete | login | logout
+  entity_type String // users | accounts | transactions | expenses | etc.
+  entity_id   Int?
+  old_values  Json? // previous state before change
+  new_values  Json? // new state after change
+  ip_address  String?
+  user_agent  String?
+  description String?
+  created_at  DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, created_at])
+  @@index([entity_type, entity_id])
+  @@index([action])
+  @@map("activity_logs")
+}
+
+// Recurring Transactions Template
+model RecurringTransaction {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  account_id       Int
+  transaction_type String
+  amount           Decimal
+  frequency        String // daily | weekly | monthly | yearly
+  start_date       DateTime
+  end_date         DateTime?
+  next_occurrence  DateTime
+  description      String?
+  category_id      Int?
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now()) @updatedAt
+
+  user    User    @relation(fields: [user_id], references: [id])
+  account Account @relation(fields: [account_id], references: [id])
+
+  @@map("recurring_transactions")
 }
